@@ -131,19 +131,21 @@ if dates:
     for i, dt in enumerate(dates):
         tanggal_str = format_tanggal_indo(dt, include_hari=True)
         with st.expander(f"Detail - {tanggal_str}", expanded=(i==0)):
-            c1, c2 = st.columns(2)
-            with c1: jam_mulai = st.time_input("Jam Mulai", key=f"jm_{i}")
-            with c2: jam_akhir = st.time_input("Jam Akhir", key=f"ja_{i}")
-            uraian = st.text_area("Uraian", key=f"ur_{i}")
-            foto = st.file_uploader("Upload Dokumentasi", type=['png', 'jpg', 'jpeg'], key=f"ft_{i}")
-            
-            data_harian.append({
-                "tanggal": tanggal_str,
-                "jam_mulai": jam_mulai.strftime('%H:%M'),
-                "jam_akhir": jam_akhir.strftime('%H:%M'),
-                "uraian": uraian,
-                "foto": foto
-            })
+                    c1, c2 = st.columns(2)
+                    # Menggunakan text_input agar bisa diketik manual
+                    with c1: jam_mulai = st.text_input("Jam Mulai (cth: 08:00)", key=f"jm_{i}")
+                    with c2: jam_akhir = st.text_input("Jam Akhir (cth: 16:00)", key=f"ja_{i}")
+                    uraian = st.text_area("Uraian", key=f"ur_{i}")
+                    foto = st.file_uploader("Upload Dokumentasi", type=['png', 'jpg', 'jpeg'], key=f"ft_{i}")
+                    
+                    data_harian.append({
+                        "tanggal": tanggal_str,
+                        # Hapus .strftime('%H:%M') karena input sudah berupa teks (string)
+                        "jam_mulai": jam_mulai,
+                        "jam_akhir": jam_akhir,
+                        "uraian": uraian,
+                        "foto": foto
+                    })
 
 st.markdown("---")
 if st.button("Generate Laporan", type="primary"):
