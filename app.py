@@ -105,6 +105,7 @@ list_golongan = ["IV/b", "IV/a", "III/d", "III/c", "III/b", "III/a", "II/c", "IX
 # --- Form Input ---
 st.subheader("1. Informasi Perjalanan")
 kegiatan = st.text_input("Kegiatan (ditulis huruf KAPITAL)")
+nomor_surat = st.text_input("Nomor dan Tanggal Surat Tugas")
 tujuan = st.text_input("Tujuan Perjalanan")
 
 col1, col2, col3 = st.columns(3)
@@ -169,6 +170,7 @@ if st.button("Generate Laporan", type="primary"):
                         "<nama>": nama, 
                         "<jabatan>": jabatan,
                         "<golongan>": golongan, 
+                        "<nomorsurat>": nomor_surat,
                         "<tujuan>": tujuan, 
                         "<waktu>": waktu_str
                     }
