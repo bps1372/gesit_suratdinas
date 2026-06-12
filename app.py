@@ -14,7 +14,7 @@ st.markdown("Otomatisasi pembuatan surat laporan perjalanan dinas. Templat dibac
 # --- KONFIGURASI URL GITHUB ---
 # Silakan ganti URL di bawah ini dengan URL "RAW" dari file templat.docx Anda di GitHub
 # Contoh format: https://raw.githubusercontent.com/username/nama-repo/main/templat.docx
-GITHUB_TEMPLATE_URL = "https://raw.githubusercontent.com/username/nama-repo/main/templat.docx"
+GITHUB_TEMPLATE_URL = "https://raw.githubusercontent.com/bps1372/gesit_suratdinas/main/templat.docx"
 
 
 # Fungsi untuk mengunduh templat dari GitHub ke dalam memori
