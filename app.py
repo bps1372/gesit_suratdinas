@@ -149,6 +149,7 @@ if st.button("Generate Laporan", type="primary"):
                     else:
                         waktu_str = format_tanggal_indo(dates[0])
                     
+                    # Dictionary ini sudah memuat semua tag yang ada di templat Word Anda
                     replacements = {
                         "<kegiatan>": kegiatan.upper() if kegiatan else "", 
                         "<nama>": nama, 
@@ -159,13 +160,15 @@ if st.button("Generate Laporan", type="primary"):
                         "<waktu>": waktu_str
                     }
                     
+                    # Replace teks di paragraf biasa
                     for p in doc.paragraphs:
                         replace_text_and_keep_style(p, replacements)
                     
+                    # Proses khusus untuk Tabel
                     if len(doc.tables) > 0:
                         tabel_kegiatan = doc.tables[0]
                         
-                        # --- KUNCI MATI LAYOUT TABEL (FIXED) MELALUI XML ---
+                        # Mengunci layout tabel agar tidak berantakan
                         tabel_kegiatan.autofit = False
                         tbl = tabel_kegiatan._tbl
                         tblPr = tbl.tblPr
@@ -176,6 +179,7 @@ if st.button("Generate Laporan", type="primary"):
                         row_to_delete = None
                         col_widths = []
                         
+                        # Mencari baris patokan (yang ada <haritanggal>)
                         for r in tabel_kegiatan.rows:
                             if "<haritanggal>" in r.cells[0].text:
                                 row_to_delete = r
@@ -194,8 +198,10 @@ if st.button("Generate Laporan", type="primary"):
                                 if run_sampel.font.size:
                                     saved_font_size = run_sampel.font.size
                             
+                            # Menghapus baris dummy setelah atributnya di-copy
                             tabel_kegiatan._tbl.remove(row_to_delete._tr)
                         
+                        # Memasukkan data baru ke baris baru tabel
                         for hari in data_harian:
                             row_cells = tabel_kegiatan.add_row().cells
                             
@@ -220,6 +226,7 @@ if st.button("Generate Laporan", type="primary"):
                                 run3 = p3.add_run()
                                 run3.add_picture(hari['foto'], width=Inches(1.5))
                                 
+                        # Pastikan sisa elemen dalam tabel (jika ada) ikut terre-place
                         for row in tabel_kegiatan.rows:
                             for cell in row.cells:
                                 for p in cell.paragraphs:
@@ -231,4 +238,4 @@ if st.button("Generate Laporan", type="primary"):
                     st.success("Laporan Berhasil Dibuat!")
                     st.download_button("📥 Download Laporan Perjalanan Dinas", bio, f"Laporan_Perjalandinas_{nama.replace(' ','_')}.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
                 except Exception as e:
-                    st.error(f"Error: {e}")
+                    st.error(f"Error saat memproses dokumen: {e}")
