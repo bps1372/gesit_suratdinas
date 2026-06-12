@@ -1,5 +1,3 @@
-# URL TEMPLAT GITHUB (Ganti dengan URL Raw Anda)
-#GITHUB_TEMPLATE_URL = "https://raw.githubusercontent.com/bps1372/gesit_suratdinas/main/templat.docx"
 import streamlit as st
 from docx import Document
 from docx.shared import Inches, Pt
@@ -14,7 +12,7 @@ st.set_page_config(page_title="Generator Laporan Perjalanan Dinas", layout="wide
 
 st.title("Generator Laporan Perjalanan Dinas")
 
-# URL TEMPLAT GITHUB (Ganti dengan URL Raw Anda)
+# URL TEMPLAT GITHUB
 GITHUB_TEMPLATE_URL = "https://raw.githubusercontent.com/bps1372/gesit_suratdinas/main/templat.docx"
 
 def load_template_from_github(url):
@@ -73,30 +71,33 @@ def replace_text_and_keep_style(paragraph, replacements):
                 run.font.size = font_size
 
 # --- Data Referensi ---
-list_nama = ["Alfianto, S.Kom, M.Kom"
-,"Ade Hartadi, SE"
-,"Nurhafizah, A.Md., S.M."
-,"Riki Hidayat, S.M."
-,"Lidya, S.Si., M.T, M.Sc"
-,"Yati Oktrina, SST, M.E."
-,"Zwesti Permatasari, SST, M.Sc"
-,"Harnofel Putra, SE."
-,"Eko Kurniawan, SE"
-,"Mona Dewi Putri Zain, S.Si."
-,"Desneli Irma, SST, M.Stat."
-,"Nike Topia, S.M."
-,"Nurul Jannah Amdayani, S.Stat."
-,"Riana Octomi Yuanas, S.Si."
-,"Rifki Hidayat, S.Stat"
-,"Yessi Anita Rahim, S.Tr.Stat."
-,"Jafriadi, S.E."
-,"Zenitha Shafira Arrasya, S.Tr.Stat."
-,"Rafy Dwi Pareza, A.Md.Stat."
-,"Reko Pratama, S.P."
-,"Muhammad Alam, A.Md."
-,"Riki Jondrizal, A.Md."
-,"Ayu Wahyuni"
-,"Randa Ilhamsyah", "Lainnya"]
+list_nama = [
+    "Alfianto, S.Kom, M.Kom",
+    "Ade Hartadi, SE",
+    "Nurhafizah, A.Md., S.M.",
+    "Riki Hidayat, S.M.",
+    "Lidya, S.Si., M.T, M.Sc",
+    "Yati Oktrina, SST, M.E.",
+    "Zwesti Permatasari, SST, M.Sc",
+    "Harnofel Putra, SE.",
+    "Eko Kurniawan, SE",
+    "Mona Dewi Putri Zain, S.Si.",
+    "Desneli Irma, SST, M.Stat.",
+    "Nike Topia, S.M.",
+    "Nurul Jannah Amdayani, S.Stat.",
+    "Riana Octomi Yuanas, S.Si.",
+    "Rifki Hidayat, S.Stat",
+    "Yessi Anita Rahim, S.Tr.Stat.",
+    "Jafriadi, S.E.",
+    "Zenitha Shafira Arrasya, S.Tr.Stat.",
+    "Rafy Dwi Pareza, A.Md.Stat.",
+    "Reko Pratama, S.P.",
+    "Muhammad Alam, A.Md.",
+    "Riki Jondrizal, A.Md.",
+    "Ayu Wahyuni",
+    "Randa Ilhamsyah", 
+    "Lainnya"
+]
 list_jabatan = ["Kepala BPS", "Kepala Subbagian Umum", "Statistisi Ahli Madya", "Statistisi Ahli Muda", "Statistisi Ahli Pertama", "Statistis Penyelia", "Statistisi Mahir", "Statistisi Terampil", "Pranata Komputer Ahli Madya", "Pranata Komputer Ahli Muda", "Pranata Komputer Ahli Pertama" , "APK APBN Ahli Pertama", "APK APBN Ahli Muda", "APK APBN Ahli Madya", "Fungsional Umum", "Staf BPS", "Staf Subbagian Umum", "Lainnya"]
 list_golongan = ["IV/b", "IV/a", "III/d", "III/c", "III/b", "III/a", "II/c", "IX", "VII", "V", "Lainnya"]
 
@@ -131,7 +132,7 @@ if dates:
         tanggal_str = format_tanggal_indo(dt, include_hari=True)
         with st.expander(f"Detail - {tanggal_str}", expanded=(i==0)):
             c1, c2 = st.columns(2)
-            # PERUBAHAN DI SINI: Menambahkan step=60 untuk interval 1 menit
+            # Menambahkan step=60 agar input waktu bisa diatur per 1 menit (bisa diketik bebas)
             with c1: jam_mulai = st.time_input("Jam Mulai", key=f"jm_{i}", step=60)
             with c2: jam_akhir = st.time_input("Jam Akhir", key=f"ja_{i}", step=60)
             uraian = st.text_area("Uraian", key=f"ur_{i}")
@@ -192,7 +193,7 @@ if st.button("Generate Laporan", type="primary"):
                             if "<haritanggal>" in r.cells[0].text:
                                 row_to_delete = r
                                 for cell in r.cells:
-                                col_widths.append(cell.width)
+                                    col_widths.append(cell.width) # Perbaikan Indentasi (Sudah Masuk Blok For)
                                 break
                         
                         saved_font_name = "Arial"
