@@ -8,10 +8,10 @@ import datetime
 import requests
 
 # Konfigurasi Halaman
-st.set_page_config(page_title="LAPER-app", layout="wide")
+st.set_page_config(page_title="ALADIN-app", layout="wide")
 
-st.title("LAPER DI BPS KOTA SOLOK")
-st.write("LAPER DI BPS KOTA SOLOK (Laporan Perjalanan Dinas BPS Kota Solok) merupakan aplikasi otomasi pembuatan Laporan Perjalanan Dinas Pegawai di BPS Kota Solok")
+st.title("ALADIN")
+st.write("ALADIN (Aplikasi Laporan perjalanan Dinas) merupakan aplikasi otomasi pembuatan Laporan Perjalanan Dinas Pegawai di BPS Kota Solok")
 
 # URL TEMPLAT GITHUB
 GITHUB_TEMPLATE_URL = "https://raw.githubusercontent.com/bps1372/gesit_suratdinas/main/templat.docx"
