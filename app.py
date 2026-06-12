@@ -11,9 +11,10 @@ import datetime
 import requests
 
 # Konfigurasi Halaman
-st.set_page_config(page_title="Generator Laporan Perjalanan Dinas", layout="wide")
+st.set_page_config(page_title="LAPER-app", layout="wide")
 
-st.title("Generator Laporan Perjalanan Dinas")
+st.title("LAPER DI BPS KOTA SOLOK")
+st.header("LAPER DI BPS KOTA SOLOK (Laporan Perjalanan Dinas di BPS Kota Solok) merupakan aplikasi otomasi pembuatan Laporan Perjalanan Dinas Pegawai di BPS Kota Solok")
 
 # URL TEMPLAT GITHUB (Ganti dengan URL Raw Anda)
 GITHUB_TEMPLATE_URL = "https://raw.githubusercontent.com/bps1372/gesit_suratdinas/main/templat.docx"
@@ -243,6 +244,6 @@ if st.button("Generate Laporan", type="primary"):
                     doc.save(bio)
                     bio.seek(0)
                     st.success("Laporan Berhasil Dibuat!")
-                    st.download_button("📥 Download Laporan", bio, f"Laporan_Perdin_{nama.replace(' ','_')}.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+                    st.download_button("📥 Download Laporan Perjalanan Dinas", bio, f"Laporan_Perjalandinas_{nama.replace(' ','_')}.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
                 except Exception as e:
                     st.error(f"Error: {e}")
