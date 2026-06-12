@@ -101,7 +101,9 @@ if st.button("Generate Laporan", type="primary"):
     else:
         try:
             # Load Template
-            doc = DocxTemplate("Laporan Perjadin s.docx")
+            doc = DocxTemplate("templat.docx")
+            # Ubah baris ini:
+
             
             # Siapkan context dictionary
             context = {
