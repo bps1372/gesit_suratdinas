@@ -3,18 +3,32 @@ from docx import Document
 from docx.shared import Inches
 import io
 import datetime
+import requests
 
 # Konfigurasi Halaman
 st.set_page_config(page_title="Generator Laporan Perjalanan Dinas", layout="wide")
 
 st.title("Generator Laporan Perjalanan Dinas")
-st.markdown("Otomatisasi pembuatan surat laporan perjalanan dinas. Silakan isi form di bawah ini.")
+st.markdown("Otomatisasi pembuatan surat laporan perjalanan dinas. Templat dibaca otomatis dari GitHub.")
 
-# --- 1. Upload Template ---
-st.subheader("1. Unggah Templat")
-template_file = st.file_uploader("Upload file templat (.docx)", type=['docx'])
+# --- KONFIGURASI URL GITHUB ---
+# Silakan ganti URL di bawah ini dengan URL "RAW" dari file templat.docx Anda di GitHub
+# Contoh format: https://raw.githubusercontent.com/username/nama-repo/main/templat.docx
+GITHUB_TEMPLATE_URL = "https://raw.githubusercontent.com/username/nama-repo/main/templat.docx"
 
-# --- 2. Data Referensi ---
+
+# Fungsi untuk mengunduh templat dari GitHub ke dalam memori
+def load_template_from_github(url):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Memicu error jika internal server error atau file tidak ditemukan
+        return io.BytesIO(response.content)
+    except Exception as e:
+        st.error(f"Gagal mengunduh templat dari GitHub. Pastikan URL benar dan repositori bersifat publik. Deskripsi Error: {e}")
+        return None
+
+
+# --- 1. Data Referensi ---
 list_nama = ["siA", "siB", "siC", "Lainnya"]
 
 list_jabatan = [
@@ -31,8 +45,8 @@ list_golongan = [
     "II/c", "IX", "VII", "V", "Lainnya"
 ]
 
-# --- 3. Form Input Utama ---
-st.subheader("2. Informasi Perjalanan")
+# --- 2. Form Input Utama ---
+st.subheader("1. Informasi Perjalanan")
 kegiatan = st.text_input("Kegiatan")
 tujuan = st.text_input("Tujuan Perjalanan")
 
@@ -59,7 +73,7 @@ with col3:
     else:
         golongan = pilihan_golongan
 
-# --- 4. Input Kalender (Waktu Perjalanan) ---
+# --- 3. Input Kalender (Waktu Perjalanan) ---
 waktu = st.date_input("Waktu Perjalanan (Pilih rentang tanggal)", [])
 
 dates = []
@@ -71,10 +85,10 @@ if len(waktu) == 2:
 elif len(waktu) == 1:
     dates = [waktu[0]]
 
-# --- 5. Dynamic Input Berdasarkan Hari ---
+# --- 4. Dynamic Input Berdasarkan Hari ---
 data_harian = []
 if dates:
-    st.subheader(f"3. Detail Kegiatan Harian ({len(dates)} Hari)")
+    st.subheader(f"2. Detail Kegiatan Harian ({len(dates)} Hari)")
     
     hari_indo = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"]
     
@@ -100,102 +114,100 @@ if dates:
                 "foto": foto
             })
 
-# --- 6. Proses Pembuatan Dokumen ---
+# --- 5. Proses Pembuatan Dokumen ---
 st.markdown("---")
 if st.button("Generate Laporan", type="primary"):
-    if not template_file:
-        st.error("Mohon unggah file templat terlebih dahulu!")
-    elif not dates:
-        st.error("Mohon pilih waktu perjalanan!")
+    if not dates:
+        st.error("Mohon tentukan waktu perjalanan pada kalender terlebih dahulu!")
     else:
-        try:
-            # Buka dokumen dari file upload
-            doc = Document(template_file)
+        with st.spinner("Mengunduh templat dari GitHub dan memproses dokumen..."):
+            # Ambil file templat secara otomatis dari URL GitHub yang dikonfigurasi
+            template_bytes = load_template_from_github(GITHUB_TEMPLATE_URL)
             
-            # Buat format string untuk <waktu>
-            if len(dates) > 1:
-                waktu_str = f"{dates[0].strftime('%d-%m-%Y')} s.d. {dates[-1].strftime('%d-%m-%Y')}"
-            else:
-                waktu_str = dates[0].strftime('%d-%m-%Y')
-            
-            # Dictionary penggantian tag
-            replacements = {
-                "<kegiatan>": kegiatan,
-                "<nama>": nama,
-                "<jabatan>": jabatan,
-                "<golongan>": golongan,
-                "<tujuan>": tujuan,
-                "<waktu>": waktu_str
-            }
-            
-            # Fungsi replace untuk Paragraf
-            for p in doc.paragraphs:
-                for key, val in replacements.items():
-                    if key in p.text:
-                        # Metode paling aman agar format teks utuh (bold/italic tidak hilang)
-                        for run in p.runs:
-                            if key in run.text:
-                                run.text = run.text.replace(key, str(val))
-                        # Fallback jika tag terpotong antar 'run'
-                        if key in p.text:
-                            p.text = p.text.replace(key, str(val))
-            
-            # Fungsi replace untuk Tabel (bagian Non-Dinamis)
-            for table in doc.tables:
-                for row in table.rows:
-                    for cell in row.cells:
-                        for p in cell.paragraphs:
-                            for key, val in replacements.items():
-                                if key in p.text:
-                                    for run in p.runs:
-                                        if key in run.text:
-                                            run.text = run.text.replace(key, str(val))
-                                    if key in p.text:
-                                        p.text = p.text.replace(key, str(val))
-            
-            # --- Proses Tabel Dinamis (Untuk Detail Harian) ---
-            # Asumsi: Tabel detail kegiatan adalah tabel pertama (indeks 0) di docx
-            if len(doc.tables) > 0:
-                tabel_kegiatan = doc.tables[0]
-                
-                # Cari baris yang mengandung tag <haritanggal>
-                row_to_delete = None
-                for row in tabel_kegiatan.rows:
-                    if "<haritanggal>" in row.cells[0].text:
-                        row_to_delete = row
-                        break
-                
-                # Hapus baris templat tersebut dari dalam XML docx
-                if row_to_delete:
-                    tabel_kegiatan._tbl.remove(row_to_delete._tr)
-                
-                # Tambahkan baris baru secara berulang berdasarkan data per hari
-                for hari in data_harian:
-                    row_cells = tabel_kegiatan.add_row().cells
-                    row_cells[0].text = hari['tanggal']
-                    row_cells[1].text = f"{hari['jam_mulai']} - {hari['jam_akhir']}"
-                    row_cells[2].text = hari['uraian']
+            if template_bytes:
+                try:
+                    # Buka dokumen dari byte stream hasil unduhan
+                    doc = Document(template_bytes)
                     
-                    # Sisipkan gambar ke sel ke-4 jika pengguna mengunggahnya
-                    if hari['foto'] is not None:
-                        paragraph = row_cells[3].paragraphs[0]
-                        run = paragraph.add_run()
-                        # Diatur lebar 1.5 inci agar rapi masuk dalam kolom tabel
-                        run.add_picture(hari['foto'], width=Inches(1.5))
-            
-            # Simpan hasil modifikasi ke Byte stream agar bisa didownload
-            bio = io.BytesIO()
-            doc.save(bio)
-            bio.seek(0)
-            
-            st.success("Berhasil membuat laporan perjalanan dinas!")
-            
-            st.download_button(
-                label="📥 Download Hasil Laporan",
-                data=bio,
-                file_name=f"Laporan_Perdin_{nama.replace(' ','_')}.docx",
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            )
-            
-        except Exception as e:
-            st.error(f"Terjadi kesalahan saat memproses dokumen: {e}")
+                    # Buat rentang format string teks untuk tag <waktu>
+                    if len(dates) > 1:
+                        waktu_str = f"{dates[0].strftime('%d-%m-%Y')} s.d. {dates[-1].strftime('%d-%m-%Y')}"
+                    else:
+                        waktu_str = dates[0].strftime('%d-%m-%Y')
+                    
+                    # Penataan kamus pengganti tag teks statis
+                    replacements = {
+                        "<kegiatan>": kegiatan,
+                        "<nama>": nama,
+                        "<jabatan>": jabatan,
+                        "<golongan>": golongan,
+                        "<tujuan>": tujuan,
+                        "<waktu>": waktu_str
+                    }
+                    
+                    # Proses penggantian tag pada paragraf teks utama
+                    for p in doc.paragraphs:
+                        for key, val in replacements.items():
+                            if key in p.text:
+                                for run in p.runs:
+                                    if key in run.text:
+                                        run.text = run.text.replace(key, str(val))
+                                if key in p.text:
+                                    p.text = p.text.replace(key, str(val))
+                    
+                    # Proses penggantian tag statis yang berada di dalam tabel (jika ada)
+                    for table in doc.tables:
+                        for row in table.rows:
+                            for cell in row.cells:
+                                for p in cell.paragraphs:
+                                    for key, val in replacements.items():
+                                        if key in p.text:
+                                            for run in p.runs:
+                                                if key in run.text:
+                                                    run.text = run.text.replace(key, str(val))
+                                            if key in p.text:
+                                                p.text = p.text.replace(key, str(val))
+                    
+                    # --- Konstruksi Tabel Dinamis Kegiatan Harian ---
+                    if len(doc.tables) > 0:
+                        tabel_kegiatan = doc.tables[0]
+                        
+                        # Menghapus baris contoh atau penanda tag bawaan dari dokumen asli
+                        row_to_delete = None
+                        for row in tabel_kegiatan.rows:
+                            if "<haritanggal>" in row.cells[0].text:
+                                row_to_delete = row
+                                break
+                        
+                        if row_to_delete:
+                            tabel_kegiatan._tbl.remove(row_to_delete._tr)
+                        
+                        # Iterasi memasukkan data input harian ke dalam baris baru tabel
+                        for hari in data_harian:
+                            row_cells = tabel_kegiatan.add_row().cells
+                            row_cells[0].text = hari['tanggal']
+                            row_cells[1].text = f"{hari['jam_mulai']} - {hari['jam_akhir']}"
+                            row_cells[2].text = hari['uraian']
+                            
+                            # Memasukkan lampiran gambar dokumentasi jika tersedia
+                            if hari['foto'] is not None:
+                                paragraph = row_cells[3].paragraphs[0]
+                                run = paragraph.add_run()
+                                run.add_picture(hari['foto'], width=Inches(1.5))
+                    
+                    # Menyimpan hasil modifikasi dokumen langsung ke memori RAM (Byte stream)
+                    bio = io.BytesIO()
+                    doc.save(bio)
+                    bio.seek(0)
+                    
+                    st.success("Laporan berhasil dibuat!")
+                    
+                    st.download_button(
+                        label="📥 Download Hasil Laporan",
+                        data=bio,
+                        file_name=f"Laporan_Perdin_{nama.replace(' ','_')}.docx",
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    )
+                    
+                except Exception as e:
+                    st.error(f"Terjadi kegagalan sewaktu memproses file dokumen: {e}")
