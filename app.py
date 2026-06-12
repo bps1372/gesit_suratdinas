@@ -119,19 +119,32 @@ if dates:
     for i, dt in enumerate(dates):
         tanggal_str = format_tanggal_indo(dt, include_hari=True)
         with st.expander(f"Detail - {tanggal_str}", expanded=(i==0)):
-            c1, c2 = st.columns(2)
-            with c1: jam_mulai = st.text_input("Jam Mulai (cth: 08:00)", key=f"jm_{i}")
-            with c2: jam_akhir = st.text_input("Jam Akhir (cth: 16:00)", key=f"ja_{i}")
-            uraian = st.text_area("Uraian", key=f"ur_{i}")
-            foto = st.file_uploader("Upload Dokumentasi", type=['png', 'jpg', 'jpeg'], key=f"ft_{i}")
+            # Fitur Input Jumlah Kegiatan Per Hari
+            jml_kegiatan = st.number_input(f"Berapa kegiatan pada {tanggal_str}?", min_value=1, max_value=10, value=1, key=f"jml_{i}")
             
-            data_harian.append({
-                "tanggal": tanggal_str,
-                "jam_mulai": jam_mulai,
-                "jam_akhir": jam_akhir,
-                "uraian": uraian,
-                "foto": foto
-            })
+            for j in range(jml_kegiatan):
+                if jml_kegiatan > 1:
+                    st.markdown(f"**🔹 Kegiatan {j+1}**")
+                
+                c1, c2 = st.columns(2)
+                with c1: jam_mulai = st.text_input("Jam Mulai (cth: 08:00)", key=f"jm_{i}_{j}")
+                with c2: jam_akhir = st.text_input("Jam Akhir (cth: 16:00)", key=f"ja_{i}_{j}")
+                uraian = st.text_area("Uraian", key=f"ur_{i}_{j}")
+                foto = st.file_uploader("Upload Dokumentasi", type=['png', 'jpg', 'jpeg'], key=f"ft_{i}_{j}")
+                
+                # Jika kegiatan ke-2 dst, kosongkan kolom tanggal agar rapi di tabel
+                tgl_tabel = tanggal_str if j == 0 else ""
+                
+                data_harian.append({
+                    "tanggal": tgl_tabel,
+                    "jam_mulai": jam_mulai,
+                    "jam_akhir": jam_akhir,
+                    "uraian": uraian,
+                    "foto": foto
+                })
+                
+                if j < jml_kegiatan - 1:
+                    st.divider()
 
 st.markdown("---")
 if st.button("Generate Laporan", type="primary"):
@@ -197,13 +210,12 @@ if st.button("Generate Laporan", type="primary"):
                         
                         for hari in data_harian:
                             row_cells = tabel_kegiatan.add_row().cells
-                            jumlah_kolom = len(row_cells) # Cek jumlah kolom aktual
+                            jumlah_kolom = len(row_cells)
                             
                             for idx, cell in enumerate(row_cells):
                                 if idx < len(col_widths) and col_widths[idx] is not None:
                                     cell.width = col_widths[idx]
                             
-                            # Cek satu per satu untuk menghindari index out of range
                             if jumlah_kolom > 0:
                                 p0 = row_cells[0].paragraphs[0]
                                 run0 = p0.add_run(hari['tanggal'])
@@ -211,7 +223,10 @@ if st.button("Generate Laporan", type="primary"):
                             
                             if jumlah_kolom > 1:
                                 p1 = row_cells[1].paragraphs[0]
-                                run1 = p1.add_run(f"{hari['jam_mulai']} - {hari['jam_akhir']}")
+                                jam_teks = ""
+                                if hari['jam_mulai'] or hari['jam_akhir']:
+                                    jam_teks = f"{hari['jam_mulai']} - {hari['jam_akhir']}"
+                                run1 = p1.add_run(jam_teks)
                                 run1.font.name, run1.font.size = saved_font_name, saved_font_size
                             
                             if jumlah_kolom > 2:
@@ -219,18 +234,15 @@ if st.button("Generate Laporan", type="primary"):
                                 run2 = p2.add_run(hari['uraian'])
                                 run2.font.name, run2.font.size = saved_font_name, saved_font_size
                             
-                            # Logika Dinamis Penempatan Foto
                             if hari['foto']:
                                 if jumlah_kolom > 3:
-                                    # Jika ada kolom ke-4, taruh foto disitu
                                     p3 = row_cells[3].paragraphs[0]
                                     run3 = p3.add_run()
-                                    run3.add_picture(hari['foto'], width=Inches(3))
+                                    run3.add_picture(hari['foto'], width=Inches(1.5))
                                 elif jumlah_kolom == 3:
-                                    # Jika tabel Word ternyata hanya terbaca 3 kolom, taruh foto di bawah uraian
                                     p2 = row_cells[2].add_paragraph()
                                     run_pic = p2.add_run()
-                                    run_pic.add_picture(hari['foto'], width=Inches(3))
+                                    run_pic.add_picture(hari['foto'], width=Inches(1.5))
                                 
                         for row in tabel_kegiatan.rows:
                             for cell in row.cells:
