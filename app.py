@@ -1,158 +1,201 @@
 import streamlit as st
-from docxtpl import DocxTemplate, InlineImage
-from docx.shared import Mm
-import datetime
+from docx import Document
+from docx.shared import Inches
 import io
+import datetime
 
 # Konfigurasi Halaman
-st.set_page_config(page_title="Generator Laporan Perjalanan", layout="centered")
+st.set_page_config(page_title="Generator Laporan Perjalanan Dinas", layout="wide")
 
-# ==========================================
-# DICTIONARY UNTUK FORMAT TANGGAL INDONESIA
-# ==========================================
-hari_id = {0: 'Senin', 1: 'Selasa', 2: 'Rabu', 3: 'Kamis', 4: 'Jumat', 5: 'Sabtu', 6: 'Minggu'}
-bulan_id = {1: 'Januari', 2: 'Februari', 3: 'Maret', 4: 'April', 5: 'Mei', 6: 'Juni', 7: 'Juli', 8: 'Agustus', 9: 'September', 10: 'Oktober', 11: 'November', 12: 'Desember'}
+st.title("Generator Laporan Perjalanan Dinas")
+st.markdown("Otomatisasi pembuatan surat laporan perjalanan dinas. Silakan isi form di bawah ini.")
 
-def format_tanggal_indonesia(date_obj):
-    hari = hari_id[date_obj.weekday()]
-    bulan = bulan_id[date_obj.month]
-    return f"{hari}, {date_obj.day} {bulan} {date_obj.year}"
+# --- 1. Upload Template ---
+st.subheader("1. Unggah Templat")
+template_file = st.file_uploader("Upload file templat (.docx)", type=['docx'])
 
-# ==========================================
-# LIST DATA DROPDOWN
-# ==========================================
+# --- 2. Data Referensi ---
 list_nama = ["siA", "siB", "siC", "Lainnya"]
+
 list_jabatan = [
-    "Kepala BPS", "Statistisi Ahli Madya", "Statistisi Ahli Muda", "Statistisi Ahli Pertama",
-    "Statistisi Mahir", "Statistisi Terampil", "Pranata Komputer Ahli Pertama", 
-    "Pranata Komputer Ahli Muda", "Pranata Komputer Ahli Madya", "Staf BPS", 
-    "Staf Subbagian Umum", "Kepala Subbagian Umum", "APK APBN Ahli Pertama", 
-    "APK APBN Muda", "APK APBN Madya", "Lainnya"
+    "Kepala BPS", "Statistisi Ahli Madya", "Statistisi Ahli Muda", 
+    "Statistisi Ahli Pertama", "Statistisi Mahir", "Statistisi Terampil", 
+    "Pranata Komputer Ahli Pertama", "Pranata Komputer Ahli Muda", 
+    "Pranata Komputer Ahli Madya", "Staf BPS", "Staf Subbagian Umum", 
+    "Kepala Subbagian Umum", "APK APBN Ahli Pertama", "APK APBN Muda", 
+    "APK APBN Madya", "Lainnya"
 ]
-list_golongan = ["IV/b", "IV/a", "III/d", "III/c", "III/b", "III/a", "II/c", "IX", "VII", "V", "Lainnya"]
 
-# ==========================================
-# ANTARMUKA STREAMLIT
-# ==========================================
-st.title("📄 Generator Laporan Perjalanan")
-st.markdown("Isi form di bawah ini untuk menghasilkan dokumen laporan perjalanan secara otomatis.")
+list_golongan = [
+    "IV/b", "IV/a", "III/d", "III/c", "III/b", "III/a", 
+    "II/c", "IX", "VII", "V", "Lainnya"
+]
 
-# 1. Input Teks Biasa
+# --- 3. Form Input Utama ---
+st.subheader("2. Informasi Perjalanan")
 kegiatan = st.text_input("Kegiatan")
 tujuan = st.text_input("Tujuan Perjalanan")
 
-# 2. Dropdown dengan Opsi "Lainnya"
 col1, col2, col3 = st.columns(3)
 
 with col1:
     pilihan_nama = st.selectbox("Nama", list_nama)
-    nama = st.text_input("Ketik Nama Baru:") if pilihan_nama == "Lainnya" else pilihan_nama
+    if pilihan_nama == "Lainnya":
+        nama = st.text_input("Ketik Nama Anda")
+    else:
+        nama = pilihan_nama
 
 with col2:
     pilihan_jabatan = st.selectbox("Jabatan", list_jabatan)
-    jabatan = st.text_input("Ketik Jabatan Baru:") if pilihan_jabatan == "Lainnya" else pilihan_jabatan
+    if pilihan_jabatan == "Lainnya":
+        jabatan = st.text_input("Ketik Jabatan Anda")
+    else:
+        jabatan = pilihan_jabatan
 
 with col3:
     pilihan_golongan = st.selectbox("Pangkat/Golongan", list_golongan)
-    golongan = st.text_input("Ketik Golongan Baru:") if pilihan_golongan == "Lainnya" else pilihan_golongan
+    if pilihan_golongan == "Lainnya":
+        golongan = st.text_input("Ketik Pangkat/Golongan Anda")
+    else:
+        golongan = pilihan_golongan
 
-# 3. Input Rentang Waktu (Tanggal)
-st.subheader("📅 Waktu Perjalanan")
-rentang_tanggal = st.date_input("Pilih Tanggal Mulai hingga Tanggal Selesai", [])
+# --- 4. Input Kalender (Waktu Perjalanan) ---
+waktu = st.date_input("Waktu Perjalanan (Pilih rentang tanggal)", [])
 
-start_date, end_date = None, None
-if len(rentang_tanggal) == 2:
-    start_date, end_date = rentang_tanggal
-elif len(rentang_tanggal) == 1:
-    start_date = end_date = rentang_tanggal[0]
-
-# 4. Form Dinamis Per Hari
-items_data = []
-
-if start_date and end_date:
+dates = []
+if len(waktu) == 2:
+    start_date, end_date = waktu
     delta = end_date - start_date
-    jumlah_hari = delta.days + 1
+    num_days = delta.days + 1
+    dates = [start_date + datetime.timedelta(days=i) for i in range(num_days)]
+elif len(waktu) == 1:
+    dates = [waktu[0]]
+
+# --- 5. Dynamic Input Berdasarkan Hari ---
+data_harian = []
+if dates:
+    st.subheader(f"3. Detail Kegiatan Harian ({len(dates)} Hari)")
     
-    st.write(f"**Total Perjalanan: {jumlah_hari} Hari**")
+    hari_indo = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"]
     
-    # Looping untuk membuat input di setiap harinya
-    for i in range(jumlah_hari):
-        current_date = start_date + datetime.timedelta(days=i)
-        tgl_format = format_tanggal_indonesia(current_date)
+    for i, dt in enumerate(dates):
+        nama_hari = hari_indo[dt.weekday()]
+        tanggal_str = f"{nama_hari}, {dt.strftime('%d-%m-%Y')}"
         
-        with st.expander(f"Hari ke-{i+1}: {tgl_format}", expanded=True):
-            jam = st.text_input(f"Jam", key=f"jam_{i}")
-            uraian = st.text_area(f"Uraian Kegiatan", key=f"uraian_{i}")
-            foto = st.file_uploader(f"Upload Dokumentasi", type=['png', 'jpg', 'jpeg'], key=f"foto_{i}")
+        with st.expander(f"Detail Hari {i+1} - {tanggal_str}", expanded=(i==0)):
+            c1, c2 = st.columns(2)
+            with c1:
+                jam_mulai = st.time_input(f"Jam Mulai", key=f"jm_{i}")
+            with c2:
+                jam_akhir = st.time_input(f"Jam Akhir", key=f"ja_{i}")
             
-            # Simpan data sementara dalam list dict
-            items_data.append({
-                "haritanggaltahun": tgl_format,
-                "jam": jam,
+            uraian = st.text_area(f"Uraian Kegiatan", key=f"ur_{i}")
+            foto = st.file_uploader(f"Upload Dokumentasi (Gambar)", type=['png', 'jpg', 'jpeg'], key=f"ft_{i}")
+            
+            data_harian.append({
+                "tanggal": tanggal_str,
+                "jam_mulai": jam_mulai.strftime('%H:%M'),
+                "jam_akhir": jam_akhir.strftime('%H:%M'),
                 "uraian": uraian,
-                "foto_file": foto # Disimpan sementara sebagai objek file stream
+                "foto": foto
             })
 
-# ==========================================
-# PROSES GENERATE WORD
-# ==========================================
-st.divider()
-if st.button("Generate Laporan Word", type="primary"):
-    if not (kegiatan and tujuan and start_date):
-        st.warning("Mohon lengkapi Kegiatan, Tujuan, dan Rentang Waktu terlebih dahulu!")
+# --- 6. Proses Pembuatan Dokumen ---
+st.markdown("---")
+if st.button("Generate Laporan", type="primary"):
+    if not template_file:
+        st.error("Mohon unggah file templat terlebih dahulu!")
+    elif not dates:
+        st.error("Mohon pilih waktu perjalanan!")
     else:
         try:
-            # Load Template
-            doc = DocxTemplate("templat.docx")
+            # Buka dokumen dari file upload
+            doc = Document(template_file)
             
-            # Format teks waktu perjalanan di kop surat
-            waktu_teks = format_tanggal_indonesia(start_date)
-            if start_date != end_date:
-                waktu_teks += f" s.d. {format_tanggal_indonesia(end_date)}"
-                
-            # Proses Items List (termasuk gambar)
-            items_render = []
-            for item in items_data:
-                # Logika agar foto bisa masuk ke Word menggunakan InlineImage
-                if item["foto_file"] is not None:
-                    gambar_doc = InlineImage(doc, item["foto_file"], width=Mm(45)) # Lebar foto 4.5 cm agar rapi di tabel
-                else:
-                    gambar_doc = "" # Kosong jika tidak ada foto
-                    
-                items_render.append({
-                    "haritanggaltahun": item["haritanggaltahun"],
-                    "jam": item["jam"],
-                    "uraian": item["uraian"],
-                    "foto": gambar_doc
-                })
-
-            # Siapkan Dictionary Konteks
-            context = {
-                "kegiatan": kegiatan,
-                "nama": nama,
-                "jabatan": jabatan,
-                "golongan": golongan,
-                "tujuan": tujuan,
-                "waktu": waktu_teks,
-                "items": items_render
+            # Buat format string untuk <waktu>
+            if len(dates) > 1:
+                waktu_str = f"{dates[0].strftime('%d-%m-%Y')} s.d. {dates[-1].strftime('%d-%m-%Y')}"
+            else:
+                waktu_str = dates[0].strftime('%d-%m-%Y')
+            
+            # Dictionary penggantian tag
+            replacements = {
+                "<kegiatan>": kegiatan,
+                "<nama>": nama,
+                "<jabatan>": jabatan,
+                "<golongan>": golongan,
+                "<tujuan>": tujuan,
+                "<waktu>": waktu_str
             }
             
-            # Render dokumen
-            doc.render(context)
+            # Fungsi replace untuk Paragraf
+            for p in doc.paragraphs:
+                for key, val in replacements.items():
+                    if key in p.text:
+                        # Metode paling aman agar format teks utuh (bold/italic tidak hilang)
+                        for run in p.runs:
+                            if key in run.text:
+                                run.text = run.text.replace(key, str(val))
+                        # Fallback jika tag terpotong antar 'run'
+                        if key in p.text:
+                            p.text = p.text.replace(key, str(val))
             
-            # Simpan ke Buffer (Bisa langsung didownload tanpa save ke disk)
-            buffer = io.BytesIO()
-            doc.save(buffer)
-            buffer.seek(0)
+            # Fungsi replace untuk Tabel (bagian Non-Dinamis)
+            for table in doc.tables:
+                for row in table.rows:
+                    for cell in row.cells:
+                        for p in cell.paragraphs:
+                            for key, val in replacements.items():
+                                if key in p.text:
+                                    for run in p.runs:
+                                        if key in run.text:
+                                            run.text = run.text.replace(key, str(val))
+                                    if key in p.text:
+                                        p.text = p.text.replace(key, str(val))
             
-            st.success("🎉 Dokumen Laporan Perjalanan berhasil dibuat!")
+            # --- Proses Tabel Dinamis (Untuk Detail Harian) ---
+            # Asumsi: Tabel detail kegiatan adalah tabel pertama (indeks 0) di docx
+            if len(doc.tables) > 0:
+                tabel_kegiatan = doc.tables[0]
+                
+                # Cari baris yang mengandung tag <haritanggal>
+                row_to_delete = None
+                for row in tabel_kegiatan.rows:
+                    if "<haritanggal>" in row.cells[0].text:
+                        row_to_delete = row
+                        break
+                
+                # Hapus baris templat tersebut dari dalam XML docx
+                if row_to_delete:
+                    tabel_kegiatan._tbl.remove(row_to_delete._tr)
+                
+                # Tambahkan baris baru secara berulang berdasarkan data per hari
+                for hari in data_harian:
+                    row_cells = tabel_kegiatan.add_row().cells
+                    row_cells[0].text = hari['tanggal']
+                    row_cells[1].text = f"{hari['jam_mulai']} - {hari['jam_akhir']}"
+                    row_cells[2].text = hari['uraian']
+                    
+                    # Sisipkan gambar ke sel ke-4 jika pengguna mengunggahnya
+                    if hari['foto'] is not None:
+                        paragraph = row_cells[3].paragraphs[0]
+                        run = paragraph.add_run()
+                        # Diatur lebar 1.5 inci agar rapi masuk dalam kolom tabel
+                        run.add_picture(hari['foto'], width=Inches(1.5))
+            
+            # Simpan hasil modifikasi ke Byte stream agar bisa didownload
+            bio = io.BytesIO()
+            doc.save(bio)
+            bio.seek(0)
+            
+            st.success("Berhasil membuat laporan perjalanan dinas!")
+            
             st.download_button(
-                label="⬇️ Download Laporan (.docx)",
-                data=buffer,
-                file_name=f"Laporan_Perjalanan_{nama.replace(' ', '_')}.docx",
+                label="📥 Download Hasil Laporan",
+                data=bio,
+                file_name=f"Laporan_Perdin_{nama.replace(' ','_')}.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
             
         except Exception as e:
-            st.error(f"Terjadi kesalahan saat memproses template: {e}")
-            st.info("Pastikan file 'templat.docx' berada di folder yang sama dengan aplikasi.")
+            st.error(f"Terjadi kesalahan saat memproses dokumen: {e}")
