@@ -1,10 +1,11 @@
 
 # URL TEMPLAT GITHUB (Ganti dengan URL Raw Anda)
 #GITHUB_TEMPLATE_URL = "https://raw.githubusercontent.com/bps1372/gesit_suratdinas/main/templat.docx"
-
 import streamlit as st
 from docx import Document
 from docx.shared import Inches, Pt
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 import io
 import datetime
 import requests
@@ -44,12 +45,8 @@ def format_tanggal_indo(date_obj, include_hari=False):
         return f"{nama_hari}, {tanggal} {bulan} {tahun}"
     return f"{tanggal} {bulan} {tahun}"
 
-# --- FUNGSI PENGGANTI TEKS ANTI GAGAL ---
+# --- FUNGSI PENGGANTI TEKS ---
 def replace_text_and_keep_style(paragraph, replacements):
-    """
-    Fungsi ini mengganti teks di level paragraf (pasti terbaca meskipun Word memecah teks)
-    dan mengembalikan gaya font serta efek tebal (bold) dari teks aslinya.
-    """
     original_text = paragraph.text
     new_text = original_text
     
@@ -57,7 +54,6 @@ def replace_text_and_keep_style(paragraph, replacements):
         new_text = new_text.replace(key, str(val))
         
     if new_text != original_text:
-        # Ambil sampel gaya dari tulisan aslinya
         is_bold = False
         font_name = None
         font_size = None
@@ -68,10 +64,8 @@ def replace_text_and_keep_style(paragraph, replacements):
                 font_size = run.font.size
                 break
         
-        # Timpa seluruh teks paragraf
         paragraph.text = new_text
         
-        # Terapkan kembali gayanya ke teks yang baru
         for run in paragraph.runs:
             run.bold = is_bold
             if font_name:
@@ -133,7 +127,7 @@ if st.button("Generate Laporan", type="primary"):
     if not dates:
         st.error("Pilih waktu perjalanan!")
     else:
-        with st.spinner("Memproses dokumen, memastikan tag terganti & kolom terkunci..."):
+        with st.spinner("Memproses dokumen dan mengunci layout tabel..."):
             template_bytes = load_template_from_github(GITHUB_TEMPLATE_URL)
             if template_bytes:
                 try:
@@ -153,17 +147,20 @@ if st.button("Generate Laporan", type="primary"):
                         "<waktu>": waktu_str
                     }
                     
-                    # 1. Ganti Teks Kop Surat dengan Logika Baru
                     for p in doc.paragraphs:
                         replace_text_and_keep_style(p, replacements)
                     
-                    # 2. Proses Tabel & Kunci Lebar Kolom
                     if len(doc.tables) > 0:
                         tabel_kegiatan = doc.tables[0]
                         
-                        # MATIKAN AUTOFIT AGAR KOLOM URAIAN TIDAK MEMANJANG
+                        # --- KUNCI MATI LAYOUT TABEL (FIXED) MELALUI XML ---
                         tabel_kegiatan.autofit = False
-                        tabel_kegiatan.allow_autofit = False
+                        tbl = tabel_kegiatan._tbl
+                        tblPr = tbl.tblPr
+                        tblLayout = OxmlElement('w:tblLayout')
+                        tblLayout.set(qn('w:type'), 'fixed')
+                        tblPr.append(tblLayout)
+                        # ---------------------------------------------------
                         
                         row_to_delete = None
                         col_widths = []
@@ -171,7 +168,6 @@ if st.button("Generate Laporan", type="primary"):
                         for r in tabel_kegiatan.rows:
                             if "<haritanggal>" in r.cells[0].text:
                                 row_to_delete = r
-                                # Simpan ukuran lebar asli dari masing-masing kolom templat
                                 for cell in r.cells:
                                     col_widths.append(cell.width)
                                 break
@@ -189,11 +185,9 @@ if st.button("Generate Laporan", type="primary"):
                             
                             tabel_kegiatan._tbl.remove(row_to_delete._tr)
                         
-                        # Masukkan data harian dan terapkan kunci lebar
                         for hari in data_harian:
                             row_cells = tabel_kegiatan.add_row().cells
                             
-                            # Terapkan ulang paksa ukuran lebar setiap sel agar tidak lari
                             for idx, cell in enumerate(row_cells):
                                 if idx < len(col_widths) and col_widths[idx] is not None:
                                     cell.width = col_widths[idx]
@@ -215,7 +209,6 @@ if st.button("Generate Laporan", type="primary"):
                                 run3 = p3.add_run()
                                 run3.add_picture(hari['foto'], width=Inches(1.5))
                                 
-                        # Proses penggantian tag di luar tabel dinamis (jika ada)
                         for row in tabel_kegiatan.rows:
                             for cell in row.cells:
                                 for p in cell.paragraphs:
