@@ -138,7 +138,7 @@ if st.button("Generate Laporan", type="primary"):
     if not dates:
         st.error("Pilih waktu perjalanan!")
     else:
-        with st.spinner("Memproses dokumen dan mengunci layout tabel..."):
+        with st.spinner("Memproses dokumen dan menyesuaikan tabel..."):
             template_bytes = load_template_from_github(GITHUB_TEMPLATE_URL)
             if template_bytes:
                 try:
@@ -149,7 +149,6 @@ if st.button("Generate Laporan", type="primary"):
                     else:
                         waktu_str = format_tanggal_indo(dates[0])
                     
-                    # Dictionary ini sudah memuat semua tag yang ada di templat Word Anda
                     replacements = {
                         "<kegiatan>": kegiatan.upper() if kegiatan else "", 
                         "<nama>": nama, 
@@ -160,15 +159,12 @@ if st.button("Generate Laporan", type="primary"):
                         "<waktu>": waktu_str
                     }
                     
-                    # Replace teks di paragraf biasa
                     for p in doc.paragraphs:
                         replace_text_and_keep_style(p, replacements)
                     
-                    # Proses khusus untuk Tabel
                     if len(doc.tables) > 0:
                         tabel_kegiatan = doc.tables[0]
                         
-                        # Mengunci layout tabel agar tidak berantakan
                         tabel_kegiatan.autofit = False
                         tbl = tabel_kegiatan._tbl
                         tblPr = tbl.tblPr
@@ -179,7 +175,6 @@ if st.button("Generate Laporan", type="primary"):
                         row_to_delete = None
                         col_widths = []
                         
-                        # Mencari baris patokan (yang ada <haritanggal>)
                         for r in tabel_kegiatan.rows:
                             if "<haritanggal>" in r.cells[0].text:
                                 row_to_delete = r
@@ -198,35 +193,45 @@ if st.button("Generate Laporan", type="primary"):
                                 if run_sampel.font.size:
                                     saved_font_size = run_sampel.font.size
                             
-                            # Menghapus baris dummy setelah atributnya di-copy
                             tabel_kegiatan._tbl.remove(row_to_delete._tr)
                         
-                        # Memasukkan data baru ke baris baru tabel
                         for hari in data_harian:
                             row_cells = tabel_kegiatan.add_row().cells
+                            jumlah_kolom = len(row_cells) # Cek jumlah kolom aktual
                             
                             for idx, cell in enumerate(row_cells):
                                 if idx < len(col_widths) and col_widths[idx] is not None:
                                     cell.width = col_widths[idx]
                             
-                            p0 = row_cells[0].paragraphs[0]
-                            run0 = p0.add_run(hari['tanggal'])
-                            run0.font.name, run0.font.size = saved_font_name, saved_font_size
+                            # Cek satu per satu untuk menghindari index out of range
+                            if jumlah_kolom > 0:
+                                p0 = row_cells[0].paragraphs[0]
+                                run0 = p0.add_run(hari['tanggal'])
+                                run0.font.name, run0.font.size = saved_font_name, saved_font_size
                             
-                            p1 = row_cells[1].paragraphs[0]
-                            run1 = p1.add_run(f"{hari['jam_mulai']} - {hari['jam_akhir']}")
-                            run1.font.name, run1.font.size = saved_font_name, saved_font_size
+                            if jumlah_kolom > 1:
+                                p1 = row_cells[1].paragraphs[0]
+                                run1 = p1.add_run(f"{hari['jam_mulai']} - {hari['jam_akhir']}")
+                                run1.font.name, run1.font.size = saved_font_name, saved_font_size
                             
-                            p2 = row_cells[2].paragraphs[0]
-                            run2 = p2.add_run(hari['uraian'])
-                            run2.font.name, run2.font.size = saved_font_name, saved_font_size
+                            if jumlah_kolom > 2:
+                                p2 = row_cells[2].paragraphs[0]
+                                run2 = p2.add_run(hari['uraian'])
+                                run2.font.name, run2.font.size = saved_font_name, saved_font_size
                             
+                            # Logika Dinamis Penempatan Foto
                             if hari['foto']:
-                                p3 = row_cells[3].paragraphs[0]
-                                run3 = p3.add_run()
-                                run3.add_picture(hari['foto'], width=Inches(1.5))
+                                if jumlah_kolom > 3:
+                                    # Jika ada kolom ke-4, taruh foto disitu
+                                    p3 = row_cells[3].paragraphs[0]
+                                    run3 = p3.add_run()
+                                    run3.add_picture(hari['foto'], width=Inches(1.5))
+                                elif jumlah_kolom == 3:
+                                    # Jika tabel Word ternyata hanya terbaca 3 kolom, taruh foto di bawah uraian
+                                    p2 = row_cells[2].add_paragraph()
+                                    run_pic = p2.add_run()
+                                    run_pic.add_picture(hari['foto'], width=Inches(1.5))
                                 
-                        # Pastikan sisa elemen dalam tabel (jika ada) ikut terre-place
                         for row in tabel_kegiatan.rows:
                             for cell in row.cells:
                                 for p in cell.paragraphs:
