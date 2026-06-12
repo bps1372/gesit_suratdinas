@@ -1,6 +1,3 @@
-
-# URL TEMPLAT GITHUB (Ganti dengan URL Raw Anda)
-#GITHUB_TEMPLATE_URL = "https://raw.githubusercontent.com/bps1372/gesit_suratdinas/main/templat.docx"
 import streamlit as st
 from docx import Document
 from docx.shared import Inches, Pt
@@ -16,7 +13,7 @@ st.set_page_config(page_title="LAPER-app", layout="wide")
 st.title("LAPER DI BPS KOTA SOLOK")
 st.write("LAPER DI BPS KOTA SOLOK (Laporan Perjalanan Dinas BPS Kota Solok) merupakan aplikasi otomasi pembuatan Laporan Perjalanan Dinas Pegawai di BPS Kota Solok")
 
-# URL TEMPLAT GITHUB (Ganti dengan URL Raw Anda)
+# URL TEMPLAT GITHUB
 GITHUB_TEMPLATE_URL = "https://raw.githubusercontent.com/bps1372/gesit_suratdinas/main/templat.docx"
 
 def load_template_from_github(url):
@@ -75,31 +72,20 @@ def replace_text_and_keep_style(paragraph, replacements):
                 run.font.size = font_size
 
 # --- Data Referensi ---
-list_nama = ["Alfianto, S.Kom, M.Kom"
-,"Ade Hartadi, SE"
-,"Nurhafizah, A.Md., S.M."
-,"Riki Hidayat, S.M."
-,"Lidya, S.Si., M.T, M.Sc"
-,"Yati Oktrina, SST, M.E."
-,"Zwesti Permatasari, SST, M.Sc"
-,"Harnofel Putra, SE."
-,"Eko Kurniawan, SE"
-,"Mona Dewi Putri Zain, S.Si."
-,"Desneli Irma, SST, M.Stat."
-,"Nike Topia, S.M."
-,"Nurul Jannah Amdayani, S.Stat."
-,"Riana Octomi Yuanas, S.Si."
-,"Rifki Hidayat, S.Stat"
-,"Yessi Anita Rahim, S.Tr.Stat."
-,"Jafriadi, S.E."
-,"Zenitha Shafira Arrasya, S.Tr.Stat."
-,"Rafy Dwi Pareza, A.Md.Stat."
-,"Reko Pratama, S.P."
-,"Muhammad Alam, A.Md."
-,"Riki Jondrizal, A.Md."
-,"Ayu Wahyuni"
-,"Randa Ilhamsyah", "Lainnya"]
-list_jabatan = ["Kepala BPS", "Kepala Subbagian Umum", "Statistisi Ahli Madya", "Statistisi Ahli Muda", "Statistisi Ahli Pertama", "Statistis Penyelia", "Statistisi Mahir", "Statistisi Terampil", "Pranata Komputer Ahli Madya", "Pranata Komputer Ahli Muda", "Pranata Komputer Ahli Pertama" , "APK APBN Ahli Pertama", "APK APBN Ahli Muda", "APK APBN Ahli Madya", "Fungsional Umum", "Staf BPS", "Staf Subbagian Umum", "Lainnya"]
+list_nama = [
+    "Alfianto, S.Kom, M.Kom", "Ade Hartadi, SE", "Nurhafizah, A.Md., S.M.", "Riki Hidayat, S.M.",
+    "Lidya, S.Si., M.T, M.Sc", "Yati Oktrina, SST, M.E.", "Zwesti Permatasari, SST, M.Sc", "Harnofel Putra, SE.",
+    "Eko Kurniawan, SE", "Mona Dewi Putri Zain, S.Si.", "Desneli Irma, SST, M.Stat.", "Nike Topia, S.M.",
+    "Nurul Jannah Amdayani, S.Stat.", "Riana Octomi Yuanas, S.Si.", "Rifki Hidayat, S.Stat", "Yessi Anita Rahim, S.Tr.Stat.",
+    "Jafriadi, S.E.", "Zenitha Shafira Arrasya, S.Tr.Stat.", "Rafy Dwi Pareza, A.Md.Stat.", "Reko Pratama, S.P.",
+    "Muhammad Alam, A.Md.", "Riki Jondrizal, A.Md.", "Ayu Wahyuni", "Randa Ilhamsyah", "Lainnya"
+]
+list_jabatan = [
+    "Kepala BPS", "Kepala Subbagian Umum", "Statistisi Ahli Madya", "Statistisi Ahli Muda", "Statistisi Ahli Pertama",
+    "Statistis Penyelia", "Statistisi Mahir", "Statistisi Terampil", "Pranata Komputer Ahli Madya", "Pranata Komputer Ahli Muda",
+    "Pranata Komputer Ahli Pertama", "APK APBN Ahli Pertama", "APK APBN Ahli Muda", "APK APBN Ahli Madya",
+    "Fungsional Umum", "Staf BPS", "Staf Subbagian Umum", "Lainnya"
+]
 list_golongan = ["IV/b", "IV/a", "III/d", "III/c", "III/b", "III/a", "II/c", "IX", "VII", "V", "Lainnya"]
 
 # --- Form Input ---
@@ -133,21 +119,19 @@ if dates:
     for i, dt in enumerate(dates):
         tanggal_str = format_tanggal_indo(dt, include_hari=True)
         with st.expander(f"Detail - {tanggal_str}", expanded=(i==0)):
-                    c1, c2 = st.columns(2)
-                    # Menggunakan text_input agar bisa diketik manual
-                    with c1: jam_mulai = st.text_input("Jam Mulai (cth: 08:00)", key=f"jm_{i}")
-                    with c2: jam_akhir = st.text_input("Jam Akhir (cth: 16:00)", key=f"ja_{i}")
-                    uraian = st.text_area("Uraian", key=f"ur_{i}")
-                    foto = st.file_uploader("Upload Dokumentasi", type=['png', 'jpg', 'jpeg'], key=f"ft_{i}")
-                    
-                    data_harian.append({
-                        "tanggal": tanggal_str,
-                        # Hapus .strftime('%H:%M') karena input sudah berupa teks (string)
-                        "jam_mulai": jam_mulai,
-                        "jam_akhir": jam_akhir,
-                        "uraian": uraian,
-                        "foto": foto
-                    })
+            c1, c2 = st.columns(2)
+            with c1: jam_mulai = st.text_input("Jam Mulai (cth: 08:00)", key=f"jm_{i}")
+            with c2: jam_akhir = st.text_input("Jam Akhir (cth: 16:00)", key=f"ja_{i}")
+            uraian = st.text_area("Uraian", key=f"ur_{i}")
+            foto = st.file_uploader("Upload Dokumentasi", type=['png', 'jpg', 'jpeg'], key=f"ft_{i}")
+            
+            data_harian.append({
+                "tanggal": tanggal_str,
+                "jam_mulai": jam_mulai,
+                "jam_akhir": jam_akhir,
+                "uraian": uraian,
+                "foto": foto
+            })
 
 st.markdown("---")
 if st.button("Generate Laporan", type="primary"):
@@ -188,7 +172,6 @@ if st.button("Generate Laporan", type="primary"):
                         tblLayout = OxmlElement('w:tblLayout')
                         tblLayout.set(qn('w:type'), 'fixed')
                         tblPr.append(tblLayout)
-                        # ---------------------------------------------------
                         
                         row_to_delete = None
                         col_widths = []
