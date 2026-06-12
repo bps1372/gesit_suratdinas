@@ -14,7 +14,7 @@ import requests
 st.set_page_config(page_title="LAPER-app", layout="wide")
 
 st.title("LAPER DI BPS KOTA SOLOK")
-st.header("LAPER DI BPS KOTA SOLOK (Laporan Perjalanan Dinas di BPS Kota Solok) merupakan aplikasi otomasi pembuatan Laporan Perjalanan Dinas Pegawai di BPS Kota Solok")
+st.subheader("LAPER DI BPS KOTA SOLOK (Laporan Perjalanan Dinas di BPS Kota Solok) merupakan aplikasi otomasi pembuatan Laporan Perjalanan Dinas Pegawai di BPS Kota Solok")
 
 # URL TEMPLAT GITHUB (Ganti dengan URL Raw Anda)
 GITHUB_TEMPLATE_URL = "https://raw.githubusercontent.com/bps1372/gesit_suratdinas/main/templat.docx"
