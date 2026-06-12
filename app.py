@@ -238,11 +238,11 @@ if st.button("Generate Laporan", type="primary"):
                                 if jumlah_kolom > 3:
                                     p3 = row_cells[3].paragraphs[0]
                                     run3 = p3.add_run()
-                                    run3.add_picture(hari['foto'], width=Inches(1.5))
+                                    run3.add_picture(hari['foto'], width=Inches(3))
                                 elif jumlah_kolom == 3:
                                     p2 = row_cells[2].add_paragraph()
                                     run_pic = p2.add_run()
-                                    run_pic.add_picture(hari['foto'], width=Inches(1.5))
+                                    run_pic.add_picture(hari['foto'], width=Inches(3))
                                 
                         for row in tabel_kegiatan.rows:
                             for cell in row.cells:
