@@ -103,7 +103,7 @@ list_golongan = ["IV/b", "IV/a", "III/d", "III/c", "III/b", "III/a", "II/c", "IX
 
 # --- Form Input ---
 st.subheader("1. Informasi Perjalanan")
-kegiatan = st.text_input("Kegiatan")
+kegiatan = st.text_input("Kegiatan (ditulis huruf KAPITAL)")
 tujuan = st.text_input("Tujuan Perjalanan")
 
 col1, col2, col3 = st.columns(3)
