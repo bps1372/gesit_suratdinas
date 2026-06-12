@@ -1,3 +1,7 @@
+
+# URL TEMPLAT GITHUB (Ganti dengan URL Raw Anda)
+#GITHUB_TEMPLATE_URL = "https://raw.githubusercontent.com/bps1372/gesit_suratdinas/main/templat.docx"
+
 import streamlit as st
 from docx import Document
 from docx.shared import Inches, Pt
@@ -39,6 +43,41 @@ def format_tanggal_indo(date_obj, include_hari=False):
         nama_hari = hari_indo[date_obj.weekday()]
         return f"{nama_hari}, {tanggal} {bulan} {tahun}"
     return f"{tanggal} {bulan} {tahun}"
+
+# --- FUNGSI PENGGANTI TEKS ANTI GAGAL ---
+def replace_text_and_keep_style(paragraph, replacements):
+    """
+    Fungsi ini mengganti teks di level paragraf (pasti terbaca meskipun Word memecah teks)
+    dan mengembalikan gaya font serta efek tebal (bold) dari teks aslinya.
+    """
+    original_text = paragraph.text
+    new_text = original_text
+    
+    for key, val in replacements.items():
+        new_text = new_text.replace(key, str(val))
+        
+    if new_text != original_text:
+        # Ambil sampel gaya dari tulisan aslinya
+        is_bold = False
+        font_name = None
+        font_size = None
+        for run in paragraph.runs:
+            if run.text.strip():
+                is_bold = run.bold
+                font_name = run.font.name
+                font_size = run.font.size
+                break
+        
+        # Timpa seluruh teks paragraf
+        paragraph.text = new_text
+        
+        # Terapkan kembali gayanya ke teks yang baru
+        for run in paragraph.runs:
+            run.bold = is_bold
+            if font_name:
+                run.font.name = font_name
+            if font_size:
+                run.font.size = font_size
 
 # --- Data Referensi ---
 list_nama = ["siA", "siB", "siC", "Lainnya"]
@@ -94,7 +133,7 @@ if st.button("Generate Laporan", type="primary"):
     if not dates:
         st.error("Pilih waktu perjalanan!")
     else:
-        with st.spinner("Memproses dokumen & menyamakan font templat..."):
+        with st.spinner("Memproses dokumen, memastikan tag terganti & kolom terkunci..."):
             template_bytes = load_template_from_github(GITHUB_TEMPLATE_URL)
             if template_bytes:
                 try:
@@ -114,30 +153,33 @@ if st.button("Generate Laporan", type="primary"):
                         "<waktu>": waktu_str
                     }
                     
-                    # 1. REPLACE TEKS STATIS (Otomatis mempertahankan font & bold asli dari run di Word)
+                    # 1. Ganti Teks Kop Surat dengan Logika Baru
                     for p in doc.paragraphs:
-                        for key, val in replacements.items():
-                            for run in p.runs:
-                                if key in run.text: 
-                                    run.text = run.text.replace(key, str(val))
+                        replace_text_and_keep_style(p, replacements)
                     
-                    # 2. PROSES TABEL DINAMIS DENGAN PENYAMAAN FONT
+                    # 2. Proses Tabel & Kunci Lebar Kolom
                     if len(doc.tables) > 0:
                         tabel_kegiatan = doc.tables[0]
                         
-                        # Loop cari baris contoh (<haritanggal>)
+                        # MATIKAN AUTOFIT AGAR KOLOM URAIAN TIDAK MEMANJANG
+                        tabel_kegiatan.autofit = False
+                        tabel_kegiatan.allow_autofit = False
+                        
                         row_to_delete = None
+                        col_widths = []
+                        
                         for r in tabel_kegiatan.rows:
                             if "<haritanggal>" in r.cells[0].text:
                                 row_to_delete = r
+                                # Simpan ukuran lebar asli dari masing-masing kolom templat
+                                for cell in r.cells:
+                                    col_widths.append(cell.width)
                                 break
                         
-                        # Inisialisasi variabel penyimpan gaya font templat
-                        saved_font_name = "Arial"  # Standar fallback jika di Word berupa 'None'
-                        saved_font_size = Pt(11)   # Standar fallback
+                        saved_font_name = "Arial"
+                        saved_font_size = Pt(11)
                         
                         if row_to_delete:
-                            # Ambil sampel font dari text run pertama di sel pertama baris templat
                             if row_to_delete.cells[0].paragraphs[0].runs:
                                 run_sampel = row_to_delete.cells[0].paragraphs[0].runs[0]
                                 if run_sampel.font.name:
@@ -145,45 +187,39 @@ if st.button("Generate Laporan", type="primary"):
                                 if run_sampel.font.size:
                                     saved_font_size = run_sampel.font.size
                             
-                            # Hapus baris penanda templat asli
                             tabel_kegiatan._tbl.remove(row_to_delete._tr)
                         
-                        # Tambahkan baris data baru dan paksa gunakan font hasil capture
+                        # Masukkan data harian dan terapkan kunci lebar
                         for hari in data_harian:
                             row_cells = tabel_kegiatan.add_row().cells
                             
-                            # Kolom 1: Hari/Tanggal
+                            # Terapkan ulang paksa ukuran lebar setiap sel agar tidak lari
+                            for idx, cell in enumerate(row_cells):
+                                if idx < len(col_widths) and col_widths[idx] is not None:
+                                    cell.width = col_widths[idx]
+                            
                             p0 = row_cells[0].paragraphs[0]
                             run0 = p0.add_run(hari['tanggal'])
-                            run0.font.name = saved_font_name
-                            run0.font.size = saved_font_size
+                            run0.font.name, run0.font.size = saved_font_name, saved_font_size
                             
-                            # Kolom 2: Jam
                             p1 = row_cells[1].paragraphs[0]
                             run1 = p1.add_run(f"{hari['jam_mulai']} - {hari['jam_akhir']}")
-                            run1.font.name = saved_font_name
-                            run1.font.size = saved_font_size
+                            run1.font.name, run1.font.size = saved_font_name, saved_font_size
                             
-                            # Kolom 3: Uraian Kegiatan
                             p2 = row_cells[2].paragraphs[0]
                             run2 = p2.add_run(hari['uraian'])
-                            run2.font.name = saved_font_name
-                            run2.font.size = saved_font_size
+                            run2.font.name, run2.font.size = saved_font_name, saved_font_size
                             
-                            # Kolom 4: Dokumentasi Foto
                             if hari['foto']:
                                 p3 = row_cells[3].paragraphs[0]
                                 run3 = p3.add_run()
                                 run3.add_picture(hari['foto'], width=Inches(1.5))
                                 
-                        # Proses juga text replacement untuk tag statis di luar tabel / dalam komponen sel lain
+                        # Proses penggantian tag di luar tabel dinamis (jika ada)
                         for row in tabel_kegiatan.rows:
                             for cell in row.cells:
                                 for p in cell.paragraphs:
-                                    for key, val in replacements.items():
-                                        for run in p.runs:
-                                            if key in run.text:
-                                                run.text = run.text.replace(key, str(val))
+                                    replace_text_and_keep_style(p, replacements)
                     
                     bio = io.BytesIO()
                     doc.save(bio)
