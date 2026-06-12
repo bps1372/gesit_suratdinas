@@ -74,7 +74,30 @@ def replace_text_and_keep_style(paragraph, replacements):
                 run.font.size = font_size
 
 # --- Data Referensi ---
-list_nama = ["siA", "siB", "siC", "Lainnya"]
+list_nama = ["Alfianto, S.Kom, M.Kom"
+,"Ade Hartadi, SE"
+,"Nurhafizah, A.Md., S.M."
+,"Riki Hidayat, S.M."
+,"Lidya, S.Si., M.T, M.Sc"
+,"Yati Oktrina, SST, M.E."
+,"Zwesti Permatasari, SST, M.Sc"
+,"Harnofel Putra, SE."
+,"Eko Kurniawan, SE"
+,"Mona Dewi Putri Zain, S.Si."
+,"Desneli Irma, SST, M.Stat."
+,"Nike Topia, S.M."
+,"Nurul Jannah Amdayani, S.Stat."
+,"Riana Octomi Yuanas, S.Si."
+,"Rifki Hidayat, S.Stat"
+,"Yessi Anita Rahim, S.Tr.Stat."
+,"Jafriadi, S.E."
+,"Zenitha Shafira Arrasya, S.Tr.Stat."
+,"Rafy Dwi Pareza, A.Md.Stat."
+,"Reko Pratama, S.P."
+,"Muhammad Alam, A.Md."
+,"Riki Jondrizal, A.Md."
+,"Ayu Wahyuni"
+,"Randa Ilhamsyah", "Lainnya"]
 list_jabatan = ["Kepala BPS", "Kepala Subbagian Umum", "Statistisi Ahli Madya", "Statistisi Ahli Muda", "Statistisi Ahli Pertama", "Statistis Penyelia", "Statistisi Mahir", "Statistisi Terampil", "Pranata Komputer Ahli Madya", "Pranata Komputer Ahli Muda", "Pranata Komputer Ahli Pertama" , "APK APBN Ahli Pertama", "APK APBN Ahli Muda", "APK APBN Ahli Madya", "Fungsional Umum", "Staf BPS", "Staf Subbagian Umum", "Lainnya"]
 list_golongan = ["IV/b", "IV/a", "III/d", "III/c", "III/b", "III/a", "II/c", "IX", "VII", "V", "Lainnya"]
 
