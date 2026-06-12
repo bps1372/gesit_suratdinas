@@ -11,7 +11,7 @@ st.set_page_config(page_title="Generator Laporan Perjalanan Dinas", layout="wide
 st.title("Generator Laporan Perjalanan Dinas")
 
 # URL TEMPLAT GITHUB (Ganti dengan URL Raw Anda)
-GITHUB_TEMPLATE_URL = "https://raw.githubusercontent.com/username/nama-repo/main/templat.docx"
+GITHUB_TEMPLATE_URL = "https://raw.githubusercontent.com/bps1372/gesit_suratdinas/main/templat.docx"
 
 def load_template_from_github(url):
     try:
