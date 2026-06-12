@@ -74,6 +74,88 @@ def replace_text_and_keep_style(paragraph, replacements):
                 run.font.size = font_size
 
 # --- Data Referensi ---
+
+
+
+
+
+
+
+
+
+import streamlit as st
+from docx import Document
+from docx.shared import Inches, Pt
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+import io
+import datetime
+import requests
+
+# Konfigurasi Halaman
+st.set_page_config(page_title="Generator Laporan Perjalanan Dinas", layout="wide")
+
+st.title("Generator Laporan Perjalanan Dinas")
+
+# URL TEMPLAT GITHUB (Ganti dengan URL Raw Anda)
+GITHUB_TEMPLATE_URL = "https://raw.githubusercontent.com/username/nama-repo/main/templat.docx"
+
+def load_template_from_github(url):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        return io.BytesIO(response.content)
+    except Exception as e:
+        st.error(f"Gagal mengunduh templat: {e}")
+        return None
+
+# --- FUNGSI FORMAT TANGGAL INDONESIA ---
+def format_tanggal_indo(date_obj, include_hari=False):
+    bulan_indo = {
+        1: "Januari", 2: "Februari", 3: "Maret", 4: "April",
+        5: "Mei", 6: "Juni", 7: "Juli", 8: "Agustus",
+        9: "September", 10: "Oktober", 11: "November", 12: "Desember"
+    }
+    hari_indo = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"]
+    
+    tanggal = date_obj.day
+    bulan = bulan_indo[date_obj.month]
+    tahun = date_obj.year
+    
+    if include_hari:
+        nama_hari = hari_indo[date_obj.weekday()]
+        return f"{nama_hari}, {tanggal} {bulan} {tahun}"
+    return f"{tanggal} {bulan} {tahun}"
+
+# --- FUNGSI PENGGANTI TEKS ---
+def replace_text_and_keep_style(paragraph, replacements):
+    original_text = paragraph.text
+    new_text = original_text
+    
+    for key, val in replacements.items():
+        new_text = new_text.replace(key, str(val))
+        
+    if new_text != original_text:
+        is_bold = False
+        font_name = None
+        font_size = None
+        for run in paragraph.runs:
+            if run.text.strip():
+                is_bold = run.bold
+                font_name = run.font.name
+                font_size = run.font.size
+                break
+        
+        paragraph.text = new_text
+        
+        for run in paragraph.runs:
+            run.bold = is_bold
+            if font_name:
+                run.font.name = font_name
+            if font_size:
+                run.font.size = font_size
+
+# --- Data Referensi ---
 list_nama = ["Alfianto, S.Kom, M.Kom"
 ,"Ade Hartadi, SE"
 ,"Nurhafizah, A.Md., S.M."
@@ -98,12 +180,12 @@ list_nama = ["Alfianto, S.Kom, M.Kom"
 ,"Riki Jondrizal, A.Md."
 ,"Ayu Wahyuni"
 ,"Randa Ilhamsyah", "Lainnya"]
-list_jabatan = ["Kepala BPS", "Kepala Subbagian Umum", "Statistisi Ahli Madya", "Statistisi Ahli Muda", "Statistisi Ahli Pertama", "Statistis Penyelia", "Statistisi Mahir", "Statistisi Terampil", "Pranata Komputer Ahli Madya", "Pranata Komputer Ahli Muda", "Pranata Komputer Ahli Pertama" , "APK APBN Ahli Pertama", "APK APBN Ahli Muda", "APK APBN Ahli Madya", "Fungsional Umum", "Staf BPS", "Staf Subbagian Umum", "Lainnya"]
+list_jabatan = ["Kepala BPS", "Statistisi Ahli Madya", "Statistisi Ahli Muda", "Statistisi Ahli Pertama", "Statistisi Mahir", "Statistisi Terampil", "Pranata Komputer Ahli Pertama", "Pranata Komputer Ahli Muda", "Pranata Komputer Ahli Madya", "Staf BPS", "Staf Subbagian Umum", "Kepala Subbagian Umum", "APK APBN Ahli Pertama", "APK APBN Muda", "APK APBN Madya", "Lainnya"]
 list_golongan = ["IV/b", "IV/a", "III/d", "III/c", "III/b", "III/a", "II/c", "IX", "VII", "V", "Lainnya"]
 
 # --- Form Input ---
 st.subheader("1. Informasi Perjalanan")
-kegiatan = st.text_input("Kegiatan (ditulis huruf KAPITAL)")
+kegiatan = st.text_input("Kegiatan")
 tujuan = st.text_input("Tujuan Perjalanan")
 
 col1, col2, col3 = st.columns(3)
@@ -132,15 +214,19 @@ if dates:
         tanggal_str = format_tanggal_indo(dt, include_hari=True)
         with st.expander(f"Detail - {tanggal_str}", expanded=(i==0)):
             c1, c2 = st.columns(2)
-            with c1: jam_mulai = st.time_input("Jam Mulai", key=f"jm_{i}")
-            with c2: jam_akhir = st.time_input("Jam Akhir", key=f"ja_{i}")
+            
+            # FITUR BARU: step=1 memaksa input memunculkan kolom detik dan bebas diketik
+            with c1: jam_mulai = st.time_input("Jam Mulai", key=f"jm_{i}", step=1)
+            with c2: jam_akhir = st.time_input("Jam Akhir", key=f"ja_{i}", step=1)
+            
             uraian = st.text_area("Uraian", key=f"ur_{i}")
             foto = st.file_uploader("Upload Dokumentasi", type=['png', 'jpg', 'jpeg'], key=f"ft_{i}")
             
             data_harian.append({
                 "tanggal": tanggal_str,
-                "jam_mulai": jam_mulai.strftime('%H:%M'),
-                "jam_akhir": jam_akhir.strftime('%H:%M'),
+                # Format diubah jadi %H:%M:%S agar detik tercetak di Word
+                "jam_mulai": jam_mulai.strftime('%H:%M:%S'),
+                "jam_akhir": jam_akhir.strftime('%H:%M:%S'),
                 "uraian": uraian,
                 "foto": foto
             })
@@ -176,14 +262,12 @@ if st.button("Generate Laporan", type="primary"):
                     if len(doc.tables) > 0:
                         tabel_kegiatan = doc.tables[0]
                         
-                        # --- KUNCI MATI LAYOUT TABEL (FIXED) MELALUI XML ---
                         tabel_kegiatan.autofit = False
                         tbl = tabel_kegiatan._tbl
                         tblPr = tbl.tblPr
                         tblLayout = OxmlElement('w:tblLayout')
                         tblLayout.set(qn('w:type'), 'fixed')
                         tblPr.append(tblLayout)
-                        # ---------------------------------------------------
                         
                         row_to_delete = None
                         col_widths = []
