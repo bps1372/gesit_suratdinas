@@ -75,7 +75,7 @@ def replace_text_and_keep_style(paragraph, replacements):
 
 # --- Data Referensi ---
 list_nama = ["siA", "siB", "siC", "Lainnya"]
-list_jabatan = ["Kepala BPS", "Statistisi Ahli Madya", "Statistisi Ahli Muda", "Statistisi Ahli Pertama", "Statistisi Mahir", "Statistisi Terampil", "Pranata Komputer Ahli Pertama", "Pranata Komputer Ahli Muda", "Pranata Komputer Ahli Madya", "Staf BPS", "Staf Subbagian Umum", "Kepala Subbagian Umum", "APK APBN Ahli Pertama", "APK APBN Muda", "APK APBN Madya", "Lainnya"]
+list_jabatan = ["Kepala BPS", "Kepala Subbagian Umum", "Statistisi Ahli Madya", "Statistisi Ahli Muda", "Statistisi Ahli Pertama", "Statistis Penyelia", "Statistisi Mahir", "Statistisi Terampil", "Pranata Komputer Ahli Madya", "Pranata Komputer Ahli Muda", "Pranata Komputer Ahli Pertama" , "APK APBN Ahli Pertama", "APK APBN Muda", "APK APBN Madya",  "Staf BPS", "Staf Subbagian Umum", "Lainnya"]
 list_golongan = ["IV/b", "IV/a", "III/d", "III/c", "III/b", "III/a", "II/c", "IX", "VII", "V", "Lainnya"]
 
 # --- Form Input ---
